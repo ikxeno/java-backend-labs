@@ -1,0 +1,32 @@
+{
+  "reflection": [
+    {
+      "type": "java.lang.String"
+    },
+    {
+      "type": "boolean"
+    },
+    {
+      "type": "io.github.ikxeno.cli.CliArguments",
+      "allDeclaredFields": true,
+      "allDeclaredMethods": true,
+      "allPublicMethods": true
+    },
+    {
+      "type": "com.beust.jcommander.converters.StringConverter",
+      "allPublicConstructors": true
+    },
+    {
+      "type": "com.beust.jcommander.converters.BooleanConverter",
+      "allPublicConstructors": true
+    },
+    {
+      "type": "com.beust.jcommander.validators.NoValidator",
+      "allPublicConstructors": true
+    },
+    {
+      "type": "com.beust.jcommander.validators.NoValueValidator",
+      "allPublicConstructors": true
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Application output streams belong to the caller and are intentionally shared. -->
+    <Match>
+        <Class name="~io\.github\.ikxeno\.(application\.LabApplication|demo\.CrudDemo)"/>
+        <Field name="~(output|error)"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+    <!-- Repository instances are shared services, not defensive-copy value objects. -->
+    <Match>
+        <Class name="~io\.github\.ikxeno\.(service\.LocationService|demo\.CrudDemo)"/>
+        <Field name="characterRepository"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+</FindBugsFilter>

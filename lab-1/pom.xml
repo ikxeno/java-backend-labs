@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.github.ikxeno</groupId>
+        <artifactId>java-backend-labs</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>lab-1</artifactId>
+    <name>Lab 1: IO and Collections</name>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.jcommander</groupId>
+            <artifactId>jcommander</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>lab-1</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset><directory>${project.basedir}/build</directory></fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>characters.csv</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <minimizeJar>true</minimizeJar>
+                            <filters>
+                                <filter>
+                                    <artifact>org.jcommander:jcommander</artifact>
+                                    <includes>
+                                        <include>**</include>
+                                    </includes>
+                                </filter>
+                                <filter>
+                                    <artifact>*:*</artifact>
+                                    <excludes>
+                                        <exclude>module-info.class</exclude>
+                                        <exclude>META-INF/versions/**/module-info.class</exclude>
+                                        <exclude>META-INF/*.SF</exclude>
+                                        <exclude>META-INF/*.RSA</exclude>
+                                        <exclude>META-INF/*.DSA</exclude>
+                                    </excludes>
+                                </filter>
+                            </filters>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>io.github.ikxeno.Main</mainClass>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>prepare-launchers</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <copy file="${project.build.directory}/${project.build.finalName}.jar"
+                                      tofile="${project.basedir}/build/java/${project.build.finalName}.jar"/>
+                                <copy todir="${project.basedir}/build/java" encoding="UTF-8" overwrite="true">
+                                    <fileset dir="${project.basedir}/src/main/scripts"/>
+                                    <filterset>
+                                        <filter token="jar.name" value="${project.build.finalName}.jar"/>
+                                        <filter token="cached.jdk" value="${graalvm.home}"/>
+                                    </filterset>
+                                </copy>
+                                <copy file="${project.basedir}/src/main/resources/characters.csv"
+                                      tofile="${project.basedir}/build/java/characters.csv"/>
+                                <fixcrlf srcdir="${project.basedir}/build/java" includes="run.sh" eol="lf"/>
+                                <fixcrlf srcdir="${project.basedir}/build/java" includes="run.bat" eol="crlf"/>
+                                <chmod file="${project.basedir}/build/java/run.sh" perm="755" osfamily="unix"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.igormaznitsa</groupId>
+                <artifactId>mvn-jlink-wrapper</artifactId>
+                <executions>
+                    <execution>
+                        <id>cache-graalvm</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>cache-jdk</goal>
+                        </goals>
+                        <configuration>
+                            <provider>URL</provider>
+                            <providerConfig>
+                                <id>${graalvm.cache.id}</id>
+                                <url>${graalvm.download.url}</url>
+                            </providerConfig>
+                            <jdkCachePath>${graalvm.cache.directory}</jdkCachePath>
+                            <jdkPathProperty>graalvm.home</jdkPathProperty>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>native</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>prepare-native-directory</id>
+                                <phase>prepare-package</phase>
+                                <goals><goal>run</goal></goals>
+                                <configuration>
+                                    <target>
+                                        <mkdir dir="${project.basedir}/build/native"/>
+                                        <copy file="${project.basedir}/src/main/resources/characters.csv"
+                                              tofile="${project.basedir}/build/native/characters.csv"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.igormaznitsa</groupId>
+                        <artifactId>mvn-jlink-wrapper</artifactId>
+                        <executions>
+                            <execution>
+                                <id>build-native</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jdk-tool</goal>
+                                </goals>
+                                <configuration>
+                                    <timeout>600</timeout>
+                                    <toolJdk>${graalvm.home}</toolJdk>
+                                    <tool>${graalvm.native-image.tool}</tool>
+                                    <output>${project.build.directory}/native-image.log</output>
+                                    <options>
+                                        <option>-Os</option>
+                                        <option>--no-fallback</option>
+                                        <option>--exact-reachability-metadata</option>
+                                        <option>-march=compatibility</option>
+                                        <option>-jar</option>
+                                        <option>${project.build.directory}/${project.build.finalName}.jar</option>
+                                        <option>-o</option>
+                                        <option>${project.basedir}/build/native/${project.build.finalName}</option>
+                                    </options>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>
