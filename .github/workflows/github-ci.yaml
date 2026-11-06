@@ -45,7 +45,7 @@ jobs:
       - name: Archive Java distribution
         run: >-
           tar -czf java.tar.gz
-          lab-1/build/java lab-2/build/java
+          lab-1/build/java lab-2/build/java lab-3/build/java
       - uses: actions/upload-artifact@v4
         with:
           name: java-${{ matrix.os }}
@@ -94,7 +94,7 @@ jobs:
       - name: Archive native distribution
         run: >-
           tar -czf native.tar.gz
-          lab-1/build/native lab-2/build/native
+          lab-1/build/native lab-2/build/native lab-3/build/native
       - uses: actions/upload-artifact@v4
         with:
           name: native-${{ matrix.os }}
@@ -162,7 +162,7 @@ jobs:
             lab-1/build/native/locations.txt
 
   integration:
-    name: PostgreSQL and packaged JDBC
+    name: PostgreSQL and packaged applications
     needs: build-native
     runs-on: ubuntu-latest
     services:
@@ -186,8 +186,8 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
-      - name: Testcontainers and JDBC CRUD
-        run: ./mvnw -B -pl lab-2 -Pintegration -Dspotbugs.skip=true verify
+      - name: Testcontainers and REST CRUD
+        run: ./mvnw -B -pl lab-2,lab-3 -Pintegration -Dspotbugs.skip=true verify
       - uses: actions/download-artifact@v4
         with:
           name: java-alpine
@@ -197,8 +197,8 @@ jobs:
       - uses: jirutka/setup-alpine@v1
         with:
           branch: v3.24
-          packages: openjdk25-jdk bash libstdc++ zlib
-      - name: Check packaged JDBC applications
+          packages: openjdk25-jdk bash curl jq libstdc++ zlib
+      - name: Check packaged JDBC and REST applications
         shell: alpine.sh {0}
         env:
           JAVA_HOME: /usr/lib/jvm/java-25-openjdk
@@ -214,6 +214,37 @@ jobs:
             else
               ./lab-2/build/native/lab-2
             fi
+
+            export DB_SCHEMA="lab3_ci_$runtime"
+            if [ "$runtime" = java ]; then
+              ./lab-3/build/java/run.sh > "lab-3-$runtime.log" 2>&1 &
+            else
+              ./lab-3/build/native/lab-3 > "lab-3-$runtime.log" 2>&1 &
+            fi
+            server_pid=$!
+            trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+            if ! curl --fail --silent --show-error --retry 20 \
+                --retry-connrefused --retry-delay 1 \
+                --max-time 5 http://localhost:8080/api/airplanes; then
+              cat "lab-3-$runtime.log"
+              exit 1
+            fi
+            status=$(curl --silent --show-error --output created.json \
+              --write-out '%{http_code}' \
+              --json '{"model":"Smoke Airbus","seats":180}' \
+              http://localhost:8080/api/airplanes)
+            test "$status" = 201
+            id=$(jq -er '.id | select(type == "number" and . > 0)' created.json)
+            curl --fail --silent --show-error \
+              "http://localhost:8080/api/airplanes/$id" \
+              | jq -e '.model == "Smoke Airbus" and .seats == 180'
+            status=$(curl --silent --show-error --output /dev/null \
+              --write-out '%{http_code}' \
+              -X DELETE "http://localhost:8080/api/airplanes/$id")
+            test "$status" = 204
+            kill "$server_pid"
+            wait "$server_pid" || true
+            trap - EXIT
           done
 
   lint:

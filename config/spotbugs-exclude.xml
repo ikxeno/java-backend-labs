@@ -19,10 +19,25 @@
     <Field name="characterRepository"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
   </Match>
-  <!-- The demo uses a shared repository. -->
+  <!--
+    Injected collaborators are shared services, not defensive-copy value
+    objects.
+  -->
   <Match>
-    <Class name="io.github.ikxeno.demo.AirplaneCrudDemo"/>
-    <Field name="repository"/>
+    <Or>
+      <Class name="io.github.ikxeno.demo.AirplaneCrudDemo"/>
+      <Class name="io.github.ikxeno.service.DefaultAirplaneService"/>
+      <Class name="io.github.ikxeno.controller.AirplaneController"/>
+    </Or>
+    <Field name="~(repository|service)"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
+  <!--
+    Spring AOT resolves required constructor dependencies before invoking
+    generated suppliers.
+  -->
+  <Match>
+    <Class name="~.*__BeanDefinitions"/>
+    <Bug pattern="NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
   </Match>
 </FindBugsFilter>
