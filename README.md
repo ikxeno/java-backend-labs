@@ -4,6 +4,7 @@
 
 - [Лабораторная 1](lab-1/README.md): файлы, коллекции и CRUD в CSV.
 - [Лабораторная 2](lab-2/README.md): JDBC, PostgreSQL, HikariCP и Flyway.
+- [Лабораторная 3](lab-3/README.md): Spring Boot, REST API и тесты.
 
 Команды сборки и запуска находятся в папке лабораторной. Версии зависимостей и
 SpotBugs и Spotless настроены в корневом `pom.xml`, CI - в
