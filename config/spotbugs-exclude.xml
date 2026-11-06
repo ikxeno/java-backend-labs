@@ -19,4 +19,10 @@
     <Field name="characterRepository"/>
     <Bug pattern="EI_EXPOSE_REP2"/>
   </Match>
+  <!-- The demo uses a shared repository. -->
+  <Match>
+    <Class name="io.github.ikxeno.demo.AirplaneCrudDemo"/>
+    <Field name="repository"/>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
 </FindBugsFilter>

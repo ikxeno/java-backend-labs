@@ -3,6 +3,7 @@
 Лабораторные по [курсу Java Backend][course], вариант 15.
 
 - [Лабораторная 1](lab-1/README.md): файлы, коллекции и CRUD в CSV.
+- [Лабораторная 2](lab-2/README.md): JDBC, PostgreSQL, HikariCP и Flyway.
 
 Команды сборки и запуска находятся в папке лабораторной. Версии зависимостей и
 SpotBugs и Spotless настроены в корневом `pom.xml`, CI - в
