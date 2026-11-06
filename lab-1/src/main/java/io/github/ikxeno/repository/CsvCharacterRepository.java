@@ -32,32 +32,38 @@ public class CsvCharacterRepository {
     }
 
     public void forEach(Consumer<RickAndMortyCharacter> action) {
-        try (CSVParser parser = CSVParser.parse(file, StandardCharsets.UTF_8, CharacterCsvMapper.readFormat())) {
+        try (CSVParser parser = CSVParser.parse(file, StandardCharsets.UTF_8,
+                CharacterCsvMapper.readFormat())) {
             CharacterCsvMapper.validateHeader(parser.getHeaderNames());
             parser.stream()
                     .map(CharacterCsvMapper::parse)
                     .forEach(action);
         } catch (IOException exception) {
-            throw new UncheckedIOException("Cannot read characters from " + file, exception);
+            throw new UncheckedIOException(
+                    "Cannot read characters from " + file, exception);
         }
     }
 
     public Optional<RickAndMortyCharacter> findById(int id) {
-        try (CSVParser parser = CSVParser.parse(file, StandardCharsets.UTF_8, CharacterCsvMapper.readFormat())) {
+        try (CSVParser parser = CSVParser.parse(file, StandardCharsets.UTF_8,
+                CharacterCsvMapper.readFormat())) {
             CharacterCsvMapper.validateHeader(parser.getHeaderNames());
             return parser.stream()
                     .map(CharacterCsvMapper::parse)
                     .filter(character -> character.id() == id)
                     .findFirst();
         } catch (IOException exception) {
-            throw new UncheckedIOException("Cannot read characters from " + file, exception);
+            throw new UncheckedIOException(
+                    "Cannot read characters from " + file, exception);
         }
     }
 
     public void create(RickAndMortyCharacter character) {
         List<RickAndMortyCharacter> characters = findAll();
-        if (characters.stream().anyMatch(existing -> existing.id() == character.id())) {
-            throw new IllegalArgumentException("Character already exists: " + character.id());
+        if (characters.stream()
+                .anyMatch(existing -> existing.id() == character.id())) {
+            throw new IllegalArgumentException(
+                    "Character already exists: " + character.id());
         }
         characters.add(character);
         saveAll(characters);
@@ -72,12 +78,14 @@ public class CsvCharacterRepository {
                 return;
             }
         }
-        throw new NoSuchElementException("Character does not exist: " + character.id());
+        throw new NoSuchElementException(
+                "Character does not exist: " + character.id());
     }
 
     public boolean deleteById(int id) {
         List<RickAndMortyCharacter> characters = findAll();
-        boolean removed = characters.removeIf(character -> character.id() == id);
+        boolean removed = characters
+                .removeIf(character -> character.id() == id);
         if (removed) {
             saveAll(characters);
         }
@@ -86,8 +94,10 @@ public class CsvCharacterRepository {
 
     private void saveAll(List<RickAndMortyCharacter> characters) {
         try {
-            Path parent = Objects.requireNonNull(file.getParent(), "CSV path must have a parent directory");
-            Path temporaryFile = Files.createTempFile(parent, "characters-", ".csv.tmp");
+            Path parent = Objects.requireNonNull(file.getParent(),
+                    "CSV path must have a parent directory");
+            Path temporaryFile = Files.createTempFile(parent, "characters-",
+                    ".csv.tmp");
             try {
                 writeCharacters(temporaryFile, characters);
                 replaceFile(temporaryFile);
@@ -95,13 +105,17 @@ public class CsvCharacterRepository {
                 Files.deleteIfExists(temporaryFile);
             }
         } catch (IOException exception) {
-            throw new UncheckedIOException("Cannot save characters to " + file, exception);
+            throw new UncheckedIOException("Cannot save characters to " + file,
+                    exception);
         }
     }
 
-    private void writeCharacters(Path destination, List<RickAndMortyCharacter> characters) throws IOException {
-        try (var writer = Files.newBufferedWriter(destination, StandardCharsets.UTF_8);
-             CSVPrinter printer = new CSVPrinter(writer, CharacterCsvMapper.writeFormat())) {
+    private void writeCharacters(Path destination,
+            List<RickAndMortyCharacter> characters) throws IOException {
+        try (var writer = Files.newBufferedWriter(destination,
+                StandardCharsets.UTF_8);
+                CSVPrinter printer = new CSVPrinter(writer,
+                        CharacterCsvMapper.writeFormat())) {
             for (RickAndMortyCharacter character : characters) {
                 CharacterCsvMapper.print(printer, character);
             }
@@ -110,9 +124,11 @@ public class CsvCharacterRepository {
 
     private void replaceFile(Path temporaryFile) throws IOException {
         try {
-            Files.move(temporaryFile, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            Files.move(temporaryFile, file, StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE);
         } catch (AtomicMoveNotSupportedException exception) {
-            Files.move(temporaryFile, file, StandardCopyOption.REPLACE_EXISTING);
+            Files.move(temporaryFile, file,
+                    StandardCopyOption.REPLACE_EXISTING);
         }
     }
 }

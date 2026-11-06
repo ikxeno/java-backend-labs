@@ -13,7 +13,8 @@ public class LocationService {
 
     public LinkedHashSet<String> findUniqueLocations() {
         LinkedHashSet<String> locations = new LinkedHashSet<>();
-        characterRepository.forEach(character -> locations.add(character.locationName()));
+        characterRepository
+                .forEach(character -> locations.add(character.locationName()));
         return locations;
     }
 }

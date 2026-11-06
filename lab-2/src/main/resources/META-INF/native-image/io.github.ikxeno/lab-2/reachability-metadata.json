@@ -1,0 +1,6 @@
+{
+  "resources": [
+    {"glob": "database.properties"},
+    {"glob": "db/migration/**"}
+  ]
+}

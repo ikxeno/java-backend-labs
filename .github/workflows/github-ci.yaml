@@ -38,10 +38,14 @@ jobs:
           cache: maven
       - name: Build JAR
         env:
-          JAVA_HOME: ${{ matrix.os == 'alpine' && '/usr/lib/jvm/java-25-openjdk' || env.JAVA_HOME }}
+          JAVA_HOME: >-
+            ${{ matrix.os == 'alpine' &&
+                '/usr/lib/jvm/java-25-openjdk' || env.JAVA_HOME }}
         run: ./mvnw -B -DskipTests package
       - name: Archive Java distribution
-        run: tar -czf java.tar.gz -C lab-1/build java
+        run: >-
+          tar -czf java.tar.gz
+          lab-1/build/java lab-2/build/java
       - uses: actions/upload-artifact@v4
         with:
           name: java-${{ matrix.os }}
@@ -76,15 +80,21 @@ jobs:
         if: matrix.os != 'alpine'
         with:
           path: ~/.mvnJlinkCache
-          key: graalvm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('pom.xml') }}
+          key: >-
+            ${{ format('graalvm-{0}-{1}-{2}', runner.os,
+                runner.arch, hashFiles('pom.xml')) }}
       - uses: ilammy/msvc-dev-cmd@v1
         if: runner.os == 'Windows'
-      - name: Build native CLI
+      - name: Build native applications
         env:
-          JAVA_HOME: ${{ matrix.os == 'alpine' && '/usr/lib/jvm/java-25-openjdk' || env.JAVA_HOME }}
+          JAVA_HOME: >-
+            ${{ matrix.os == 'alpine' &&
+                '/usr/lib/jvm/java-25-openjdk' || env.JAVA_HOME }}
         run: ./mvnw -B -DskipTests -Pnative package
       - name: Archive native distribution
-        run: tar -czf native.tar.gz -C lab-1/build native
+        run: >-
+          tar -czf native.tar.gz
+          lab-1/build/native lab-2/build/native
       - uses: actions/upload-artifact@v4
         with:
           name: native-${{ matrix.os }}
@@ -123,17 +133,20 @@ jobs:
           name: native-${{ matrix.os }}
       - name: Extract distributions
         run: |
-          mkdir -p lab-1/build
-          tar -xzf java.tar.gz -C lab-1/build
-          tar -xzf native.tar.gz -C lab-1/build
+          tar -xzf java.tar.gz
+          tar -xzf native.tar.gz
       - name: Unit and application tests
         env:
-          JAVA_HOME: ${{ matrix.os == 'alpine' && '/usr/lib/jvm/java-25-openjdk' || env.JAVA_HOME }}
+          JAVA_HOME: >-
+            ${{ matrix.os == 'alpine' &&
+                '/usr/lib/jvm/java-25-openjdk' || env.JAVA_HOME }}
         run: ./mvnw -B test
       - name: Check packaged CLI applications
         run: |
           java -jar lab-1/build/java/lab-1.jar --help
-          java -jar lab-1/build/java/lab-1.jar -i lab-1/build/java/characters.csv -o lab-1/build/java/jar-locations.txt
+          java -jar lab-1/build/java/lab-1.jar \
+            -i lab-1/build/java/characters.csv \
+            -o lab-1/build/java/jar-locations.txt
           if [ "$RUNNER_OS" = "Windows" ]; then
             MSYS_NO_PATHCONV=1 cmd.exe /d /c 'lab-1\build\java\run.bat'
             native=lab-1/build/native/lab-1.exe
@@ -142,13 +155,70 @@ jobs:
             native=lab-1/build/native/lab-1
           fi
           "$native" --help
-          "$native" -i lab-1/build/native/characters.csv -o lab-1/build/native/locations.txt --crud-demo
+          "$native" -i lab-1/build/native/characters.csv \
+            -o lab-1/build/native/locations.txt --crud-demo
           cmp lab-1/build/java/jar-locations.txt lab-1/build/java/locations.txt
-          cmp lab-1/build/java/jar-locations.txt lab-1/build/native/locations.txt
+          cmp lab-1/build/java/jar-locations.txt \
+            lab-1/build/native/locations.txt
+
+  integration:
+    name: PostgreSQL and packaged JDBC
+    needs: build-native
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_DB: java_backend_labs
+          POSTGRES_USER: labs
+          POSTGRES_PASSWORD: labs
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U labs -d java_backend_labs"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+      - name: Testcontainers and JDBC CRUD
+        run: ./mvnw -B -pl lab-2 -Pintegration -Dspotbugs.skip=true verify
+      - uses: actions/download-artifact@v4
+        with:
+          name: java-alpine
+      - uses: actions/download-artifact@v4
+        with:
+          name: native-alpine
+      - uses: jirutka/setup-alpine@v1
+        with:
+          branch: v3.24
+          packages: openjdk25-jdk bash libstdc++ zlib
+      - name: Check packaged JDBC applications
+        shell: alpine.sh {0}
+        env:
+          JAVA_HOME: /usr/lib/jvm/java-25-openjdk
+        run: |
+          set -eu
+          set -o pipefail
+          tar -xzf java.tar.gz
+          tar -xzf native.tar.gz
+          for runtime in java native; do
+            export DB_SCHEMA="lab2_ci_$runtime"
+            if [ "$runtime" = java ]; then
+              ./lab-2/build/java/run.sh
+            else
+              ./lab-2/build/native/lab-2
+            fi
+          done
 
   lint:
-    name: Lint (Alpine)
-    needs: test
+    name: Static analysis (Alpine)
+    needs: [test, integration]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -156,8 +226,8 @@ jobs:
         with:
           branch: v3.24
           packages: openjdk25-jdk curl unzip
-      - name: SpotBugs
+      - name: Formatting and SpotBugs
         shell: alpine.sh {0}
         env:
           JAVA_HOME: /usr/lib/jvm/java-25-openjdk
-        run: ./mvnw -B -DskipTests compile spotbugs:check
+        run: ./mvnw -B -DskipTests compile spotless:check spotbugs:check

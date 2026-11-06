@@ -13,16 +13,20 @@ public final class CliArguments {
     @Parameter(description = "<input.csv> <output.txt>")
     private List<String> files = new ArrayList<>();
 
-    @Parameter(names = {"-i", "--input"}, description = "Input characters CSV", order = 1)
+    @Parameter(names = {"-i", "--input"},
+            description = "Input characters CSV", order = 1)
     private String inputFile;
 
-    @Parameter(names = {"-o", "--output"}, description = "Output locations file", order = 2)
+    @Parameter(names = {"-o", "--output"},
+            description = "Output locations file", order = 2)
     private String outputFile;
 
-    @Parameter(names = "--crud-demo", description = "Demonstrate CRUD in the input CSV", order = 3)
+    @Parameter(names = "--crud-demo",
+            description = "Demonstrate CRUD in the input CSV", order = 3)
     private boolean crudDemo;
 
-    @Parameter(names = {"-h", "--help"}, help = true, description = "Show this help", order = 4)
+    @Parameter(names = {"-h", "--help"}, help = true,
+            description = "Show this help", order = 4)
     private boolean help;
 
     public static CliArguments parse(String[] args) {
@@ -52,23 +56,30 @@ public final class CliArguments {
     public CommandLineOptions toOptions() {
         if (inputFile != null || outputFile != null) {
             if (!files.isEmpty()) {
-                throw new IllegalArgumentException("Use either --input/--output or two positional paths");
+                throw new IllegalArgumentException(
+                        "Use either --input/--output or two positional paths");
             }
             if (inputFile == null || outputFile == null) {
-                throw new IllegalArgumentException("Both --input and --output are required");
+                throw new IllegalArgumentException(
+                        "Both --input and --output are required");
             }
-            return new CommandLineOptions(Path.of(inputFile), Path.of(outputFile), crudDemo);
+            return new CommandLineOptions(Path.of(inputFile),
+                    Path.of(outputFile), crudDemo);
         }
         if (files.size() != 2) {
-            throw new IllegalArgumentException("Expected exactly two paths: input CSV and output text file");
+            throw new IllegalArgumentException(
+                    "Expected exactly two paths: input CSV "
+                            + "and output text file");
         }
         files.stream()
                 .filter(path -> path.startsWith("-"))
                 .findFirst()
                 .ifPresent(path -> {
                     throw new IllegalArgumentException("Unknown option: " + path
-                            + ". Prefix filenames starting with '-' with ./ or use --input/--output");
+                            + ". Prefix filenames starting with '-' with ./ "
+                            + "or use --input/--output");
                 });
-        return new CommandLineOptions(Path.of(files.get(0)), Path.of(files.get(1)), crudDemo);
+        return new CommandLineOptions(Path.of(files.get(0)),
+                Path.of(files.get(1)), crudDemo);
     }
 }
