@@ -15,7 +15,8 @@ public class LocationFileWriter {
             }
             Files.write(file, locations, StandardCharsets.UTF_8);
         } catch (IOException exception) {
-            throw new UncheckedIOException("Cannot write locations to " + file, exception);
+            throw new UncheckedIOException("Cannot write locations to " + file,
+                    exception);
         }
     }
 }

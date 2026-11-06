@@ -11,5 +11,6 @@ if "%~1"=="--crud-demo" if "%~2"=="" goto defaults
 exit /b %errorlevel%
 
 :defaults
-"%LAB_JAVA%" -jar "%~dp0@jar.name@" "%~dp0characters.csv" "%~dp0locations.txt" %*
+"%LAB_JAVA%" -jar "%~dp0@jar.name@" ^
+    "%~dp0characters.csv" "%~dp0locations.txt" %*
 exit /b %errorlevel%

@@ -12,8 +12,7 @@ public record RickAndMortyCharacter(
         String gender,
         String originName,
         String locationName,
-        Instant created
-) {
+        Instant created) {
     public RickAndMortyCharacter {
         if (id <= 0) {
             throw new IllegalArgumentException("Character ID must be positive");

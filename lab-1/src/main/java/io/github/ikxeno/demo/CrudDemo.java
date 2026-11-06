@@ -14,7 +14,8 @@ public class CrudDemo {
         this(characterRepository, System.out);
     }
 
-    public CrudDemo(CsvCharacterRepository characterRepository, PrintStream output) {
+    public CrudDemo(CsvCharacterRepository characterRepository,
+            PrintStream output) {
         this.characterRepository = characterRepository;
         this.output = output;
     }
@@ -26,18 +27,25 @@ public class CrudDemo {
                 .orElse(0);
         int characterId = Math.incrementExact(maximumId);
         Instant created = Instant.parse("2026-01-01T00:00:00Z");
-        var character = new RickAndMortyCharacter(characterId, "Demo Rick", "Alive", "Human", "", "Male",
+        var character = new RickAndMortyCharacter(characterId, "Demo Rick",
+                "Alive", "Human", "", "Male",
                 "Earth (C-137)", "Citadel of Ricks", created);
         characterRepository.create(character);
-        output.println("Created: " + characterRepository.findById(characterId).orElseThrow());
+        output.println("Created: "
+                + characterRepository.findById(characterId).orElseThrow());
 
-        var updatedCharacter = new RickAndMortyCharacter(characterId, character.name(), character.status(),
-                character.species(), character.type(), character.gender(), character.originName(),
+        var updatedCharacter = new RickAndMortyCharacter(characterId,
+                character.name(), character.status(),
+                character.species(), character.type(), character.gender(),
+                character.originName(),
                 "Earth (Replacement Dimension)", character.created());
         characterRepository.update(updatedCharacter);
-        output.println("Updated: " + characterRepository.findById(characterId).orElseThrow());
+        output.println("Updated: "
+                + characterRepository.findById(characterId).orElseThrow());
 
-        output.println("Deleted: " + characterRepository.deleteById(characterId));
-        output.println("Present after deletion: " + characterRepository.findById(characterId).isPresent());
+        output.println(
+                "Deleted: " + characterRepository.deleteById(characterId));
+        output.println("Present after deletion: "
+                + characterRepository.findById(characterId).isPresent());
     }
 }

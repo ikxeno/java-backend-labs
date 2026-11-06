@@ -34,6 +34,7 @@
     <maven-antrun-plugin.version>3.2.0</maven-antrun-plugin.version>
     <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
     <spotbugs-maven-plugin.version>4.10.5.0</spotbugs-maven-plugin.version>
+    <spotless-maven-plugin.version>3.11.0</spotless-maven-plugin.version>
     <mvn-jlink-wrapper.version>1.2.6</mvn-jlink-wrapper.version>
     <maven.compiler.fork>true</maven.compiler.fork>
     <maven.compiler.executable>
@@ -97,6 +98,32 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>${spotless-maven-plugin.version}</version>
+        <configuration>
+          <java>
+            <eclipse>
+              <version>4.41</version>
+              <file>
+                ${maven.multiModuleProjectDirectory}/config/java-format.properties
+              </file>
+            </eclipse>
+            <trimTrailingWhitespace/>
+            <endWithNewline/>
+          </java>
+        </configuration>
+        <executions>
+          <execution>
+            <id>check-format</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>com.igormaznitsa</groupId>
         <artifactId>mvn-jlink-wrapper</artifactId>
